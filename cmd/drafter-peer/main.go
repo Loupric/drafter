@@ -739,3 +739,16 @@ func main() {
 
 	log.Println("Shutting down")
 }
+
+func getLocalIP() (string, error) {
+	// Connexion à une adresse externe pour déterminer l'IP locale
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+
+	// Récupérer l'adresse locale
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String(), nil
+}

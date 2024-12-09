@@ -15,6 +15,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"bytes"
+	"fmt"
+	"net/http"
+	"crypto/tls"
 
 	"github.com/loopholelabs/drafter/pkg/ipc"
 	"github.com/loopholelabs/drafter/pkg/mounter"
@@ -450,6 +454,59 @@ func main() {
 	})
 
 	log.Println("Resumed VM in", time.Since(before), "on", p.VMPath)
+
+
+
+
+
+	localIP, err := getLocalIP()
+	if err != nil {
+		fmt.Println("Erreur lors de la récupération de l'adresse IP locale:", err)
+		return
+	}
+
+	// Définir l'URL
+	url := "http://82.65.167.116:8313/rest/ip/firewall/nat/*5"
+
+	// Créer le payload JSON
+	payload := map[string]string{
+		"to-addresses": localIP,
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Println("Erreur lors de la création du JSON:", err)
+		return
+	}
+
+	// Créer la requête PATCH
+	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Erreur lors de la création de la requête:", err)
+		return
+	}
+
+	// Ajouter les en-têtes et l'authentification basique
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth("admin", "Darki1234")
+
+	// Ignorer la vérification SSL (optionnel : seulement si nécessaire)
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	// Envoyer la requête
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Erreur lors de l'envoi de la requête:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Lire la réponse
+	fmt.Println("Statut HTTP:", resp.Status)
+
+
+
+
 
 	if err := migratedPeer.Wait(); err != nil {
 		panic(err)
